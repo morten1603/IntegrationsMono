@@ -1,0 +1,31 @@
+# .github/workflows/ingest-redis.yml
+name: Ingest Redis
+
+on:
+  workflow_dispatch:
+    inputs:
+      redis_version:
+        required: true
+        default: '7.2.4'
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest-arm64
+    permissions:
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ingest
+        env:
+          REDIS_VERSION: ${{ inputs.redis_version }}
+          GITHUB_ORG: ${{ github.repository_owner }}
+        run: bash ingestion/redis/ingest.sh
