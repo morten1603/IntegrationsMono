@@ -10,7 +10,7 @@ on:
 
 jobs:
   ingest:
-    runs-on: ubuntu-latest-arm64
+    runs-on: ubuntu-latest
     permissions:
       packages: write
 
