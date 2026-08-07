@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  cots-hardware:
+    image: ghcr.io/morten1603/cots-dummy:v1.0.0
+    ports:
+      - "6379:6379"
+
+  my-adapter:
+    image: ghcr.io/morten1603/my-adapter-service:latest
+    environment:
+      - COTS_HOST=cots-hardware
+      - COTS_PORT=6379
+    depends_on:
+      - cots-hardware

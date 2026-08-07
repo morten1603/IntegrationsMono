@@ -1,0 +1,1 @@
+Lightweight dashboard (telemetry, health, commands)
