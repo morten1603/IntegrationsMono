@@ -5,10 +5,10 @@ import time
 from adapters.common.models import Command, CommandType, Result, TelemetryFrame, utc_now
 
 
-class MockAdapter:
+class SimulatorAdapter:
     """In-memory adapter that simulates a UAV sending telemetry."""
 
-    def __init__(self, name: str = "mock") -> None:
+    def __init__(self, name: str = "simulator") -> None:
         self._name = name
         self._start = time.monotonic()
         self._armed = False
@@ -43,14 +43,14 @@ class MockAdapter:
     def send_command(self, cmd: Command) -> Result:
         if cmd.type == CommandType.ARM:
             self._armed = True
-            return Result(success=True, message="Mock vehicle armed")
+            return Result(success=True, message="Simulator vehicle armed")
         if cmd.type == CommandType.DISARM:
             self._armed = False
-            return Result(success=True, message="Mock vehicle disarmed")
+            return Result(success=True, message="Simulator vehicle disarmed")
         if cmd.type == CommandType.SET_MODE:
             mode = str(cmd.params.get("mode", "GUIDED"))
             self._mode = mode
-            return Result(success=True, message=f"Mock mode set to {mode}")
+            return Result(success=True, message=f"Simulator mode set to {mode}")
         return Result(success=False, message=f"Unsupported command: {cmd.type}")
 
     def to_json(self) -> str:

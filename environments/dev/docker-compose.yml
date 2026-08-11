@@ -2,12 +2,15 @@ version: '3.8'
 
 services:
   cots-hardware:
-    image: ghcr.io/morten1603/cots-dummy:v1.0.0
+    image: ghcr.io/morten1603/third-party/redis:7.2.4
     ports:
       - "6379:6379"
 
-  my-adapter:
-    image: ghcr.io/morten1603/my-adapter-service:latest
+  simulation-publisher:
+    build:
+      context: ../..
+      dockerfile: simulation/Dockerfile
+    image: simulation-publisher:local
     environment:
       - COTS_HOST=cots-hardware
       - COTS_PORT=6379
