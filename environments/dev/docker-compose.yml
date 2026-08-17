@@ -16,3 +16,17 @@ services:
       - COTS_PORT=6379
     depends_on:
       - cots-hardware
+
+  c2-api:
+    build:
+      context: ../..
+      dockerfile: c2/Dockerfile
+    image: c2-api:local
+    ports:
+      - "8000:8000"
+    environment:
+      - COTS_HOST=cots-hardware
+      - COTS_PORT=6379
+    depends_on:
+      - cots-hardware
+      - simulation-publisher

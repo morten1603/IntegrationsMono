@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>C2 Hello</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 28rem;
+        margin: 3rem auto;
+        padding: 0 1rem;
+      }
+      label {
+        display: block;
+        margin-bottom: 0.35rem;
+        font-weight: 600;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.5rem 0.6rem;
+        margin-bottom: 0.75rem;
+      }
+      button {
+        padding: 0.5rem 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>C2</h1>
+    <label for="result">API response</label>
+    <input id="result" type="text" readonly placeholder="Press the button…" />
+    <button id="hello" type="button">Say hello</button>
+
+    <script>
+      const result = document.getElementById("result");
+      document.getElementById("hello").addEventListener("click", async () => {
+        result.value = "Loading…";
+        try {
+          const response = await fetch("/api/hello");
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const data = await response.json();
+          result.value = data.message;
+        } catch (err) {
+          result.value = `Error: ${err.message}`;
+        }
+      });
+    </script>
+  </body>
+</html>

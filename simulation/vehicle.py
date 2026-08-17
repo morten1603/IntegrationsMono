@@ -1,13 +1,12 @@
-import json
+"""In-memory fake UAV used by the simulation harness."""
+
 import math
 import time
 
 from adapters.common.models import Command, CommandType, Result, TelemetryFrame, utc_now
 
 
-class SimulatorAdapter:
-    """In-memory adapter that simulates a UAV sending telemetry."""
-
+class SimulatedVehicle:
     def __init__(self, name: str = "simulator") -> None:
         self._name = name
         self._start = time.monotonic()
@@ -18,10 +17,7 @@ class SimulatorAdapter:
     def name(self) -> str:
         return self._name
 
-    def ping(self) -> bool:
-        return True
-
-    def get_latest(self) -> TelemetryFrame:
+    def next_telemetry(self) -> TelemetryFrame:
         elapsed = time.monotonic() - self._start
         latitude = 59.9139 + 0.0001 * math.sin(elapsed / 10)
         longitude = 10.7522 + 0.0001 * math.cos(elapsed / 10)
@@ -40,30 +36,15 @@ class SimulatorAdapter:
             extra={"simulated": True, "elapsed_s": round(elapsed, 1)},
         )
 
-    def send_command(self, cmd: Command) -> Result:
+    def apply_command(self, cmd: Command) -> Result:
         if cmd.type == CommandType.ARM:
             self._armed = True
-            return Result(success=True, message="Simulator vehicle armed")
+            return Result(success=True, message="Simulated vehicle armed")
         if cmd.type == CommandType.DISARM:
             self._armed = False
-            return Result(success=True, message="Simulator vehicle disarmed")
+            return Result(success=True, message="Simulated vehicle disarmed")
         if cmd.type == CommandType.SET_MODE:
             mode = str(cmd.params.get("mode", "GUIDED"))
             self._mode = mode
-            return Result(success=True, message=f"Simulator mode set to {mode}")
+            return Result(success=True, message=f"Simulated mode set to {mode}")
         return Result(success=False, message=f"Unsupported command: {cmd.type}")
-
-    def to_json(self) -> str:
-        frame = self.get_latest()
-        payload = {
-            "timestamp": frame.timestamp.isoformat(),
-            "latitude": frame.latitude,
-            "longitude": frame.longitude,
-            "altitude_m": frame.altitude_m,
-            "battery_pct": frame.battery_pct,
-            "mode": frame.mode,
-            "armed": frame.armed,
-            "source": frame.source,
-            "extra": frame.extra,
-        }
-        return json.dumps(payload)

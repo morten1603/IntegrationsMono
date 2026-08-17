@@ -1,1 +1,1 @@
-"""Synthetic environment: generators and publishers that feed adapters."""
+"""Synthetic environment: vehicle models and publishers that feed Redis/COTS."""

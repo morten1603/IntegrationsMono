@@ -5,7 +5,7 @@ from typing import Any
 
 import redis
 
-from adapters.common.models import Command, CommandType, Result, TelemetryFrame, utc_now
+from adapters.common.models import Command, Result, TelemetryFrame, utc_now
 
 
 class RedisAdapter:
@@ -49,12 +49,6 @@ class RedisAdapter:
         self._client.rpush(self.COMMAND_KEY, json.dumps(payload))
         return Result(success=True, message=f"Command queued in Redis COTS: {cmd.type.value}")
 
-    def publish_telemetry(self, frame: TelemetryFrame) -> None:
-        self._client.set(
-            self.TELEMETRY_KEY,
-            json.dumps(self._frame_to_dict(frame)),
-        )
-
     def _default_frame(self) -> TelemetryFrame:
         return TelemetryFrame(
             timestamp=utc_now(),
@@ -67,20 +61,6 @@ class RedisAdapter:
             source=self._name,
             extra={"note": "No telemetry published by COTS yet"},
         )
-
-    @staticmethod
-    def _frame_to_dict(frame: TelemetryFrame) -> dict[str, Any]:
-        return {
-            "timestamp": frame.timestamp.isoformat(),
-            "latitude": frame.latitude,
-            "longitude": frame.longitude,
-            "altitude_m": frame.altitude_m,
-            "battery_pct": frame.battery_pct,
-            "mode": frame.mode,
-            "armed": frame.armed,
-            "source": frame.source,
-            "extra": frame.extra,
-        }
 
     @staticmethod
     def _frame_from_dict(data: dict[str, Any]) -> TelemetryFrame:

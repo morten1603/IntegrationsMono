@@ -1,35 +1,60 @@
-"""Publish simulated telemetry into Redis COTS.
-
-This is the simulation harness entrypoint, not part of the Redis adapter.
-The Redis adapter only translates Redis <-> the canonical model; this process
-invents world state and writes it through the adapter.
-"""
+"""Publish simulated telemetry into Redis (COTS stand-in)."""
 
 import json
 import os
 import time
 
-from adapters.common.models import utc_now
-from adapters.redis.adapter import RedisAdapter
-from adapters.simulator.adapter import SimulatorAdapter
+import redis
+
+from adapters.common.models import TelemetryFrame, utc_now
+from simulation.vehicle import SimulatedVehicle
+
+# Must stay in sync with RedisAdapter.TELEMETRY_KEY
+TELEMETRY_KEY = "cots:telemetry"
+
+
+def _frame_to_json(frame: TelemetryFrame) -> str:
+    return json.dumps(
+        {
+            "timestamp": frame.timestamp.isoformat(),
+            "latitude": frame.latitude,
+            "longitude": frame.longitude,
+            "altitude_m": frame.altitude_m,
+            "battery_pct": frame.battery_pct,
+            "mode": frame.mode,
+            "armed": frame.armed,
+            "source": frame.source,
+            "extra": frame.extra,
+        }
+    )
 
 
 def main() -> None:
-    redis_adapter = RedisAdapter()
-    if not redis_adapter.ping():
-        raise SystemExit(
-            f"Could not connect to Redis at {redis_adapter._host}:{redis_adapter._port}"
-        )
+    host = os.getenv("COTS_HOST", "localhost")
+    port = int(os.getenv("COTS_PORT", "6379"))
+    client = redis.Redis(host=host, port=port, decode_responses=True)
 
-    print(f"Connected to Redis COTS at {redis_adapter._host}:{redis_adapter._port}")
-    simulator = SimulatorAdapter(name="redis-cots-simulator")
+    try:
+        client.ping()
+    except redis.RedisError as exc:
+        raise SystemExit(f"Could not connect to Redis at {host}:{port}") from exc
+
+    print(f"Connected to Redis at {host}:{port}")
+    vehicle = SimulatedVehicle(name="simulator")
 
     publish_interval = float(os.getenv("TELEMETRY_INTERVAL_S", "1.0"))
     while True:
-        frame = simulator.get_latest()
-        frame.source = redis_adapter.name
-        redis_adapter.publish_telemetry(frame)
-        print(json.dumps({"published": True, "timestamp": utc_now().isoformat()}))
+        frame = vehicle.next_telemetry()
+        client.set(TELEMETRY_KEY, _frame_to_json(frame))
+        print(
+            json.dumps(
+                {
+                    "published": True,
+                    "source": frame.source,
+                    "timestamp": utc_now().isoformat(),
+                }
+            )
+        )
         time.sleep(publish_interval)
 
 

@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "integrations-mono"
 version = "0.1.0"
@@ -18,6 +22,10 @@ dev = [
     "httpx>=0.27.0",
     "ruff>=0.7.0",
 ]
+
+[tool.setuptools.packages.find]
+include = ["adapters*", "c2*", "simulation*"]
+exclude = ["environments*", "ingestion*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
