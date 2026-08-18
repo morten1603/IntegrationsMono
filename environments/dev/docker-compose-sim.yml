@@ -1,17 +1,22 @@
+version: '3.8'
+
 services:
   cots-hardware:
     image: ghcr.io/morten1603/third-party/redis:7.2.4
     ports:
       - "6379:6379"
 
-  px4-simulation:
-    image: px4io/px4-sitl:latest
-    network_mode: "host"
- 
- mavlink-bridge:
-    image: mavlink-router/mavlink-router:latest
-    network_mode: "host"
-    
+  simulation-publisher:
+    build:
+      context: ../..
+      dockerfile: simulation/Dockerfile
+    image: simulation-publisher:local
+    environment:
+      - COTS_HOST=cots-hardware
+      - COTS_PORT=6379
+    depends_on:
+      - cots-hardware
+
   c2-api:
     build:
       context: ../..
@@ -24,4 +29,4 @@ services:
       - COTS_PORT=6379
     depends_on:
       - cots-hardware
-      - px4-simulation
+      - simulation-publisher
