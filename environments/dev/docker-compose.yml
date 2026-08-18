@@ -6,6 +6,9 @@ services:
     ports:
       - "6379:6379"
 
+  px4-simulation:
+    image: px4io/px4-sitl:latest
+    network_mode: "host"
   simulation-publisher:
     build:
       context: ../..
