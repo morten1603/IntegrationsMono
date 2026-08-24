@@ -20,7 +20,10 @@ services:
     network_mode: "host"
  
   mavlink-bridge:
-    image: mavlink-router/mavlink-router:latest
+    build:
+      context: ../..
+      dockerfile: mavlinkBridge/Dockerfile   
+    image: mavlink-bridge:local
     network_mode: "host"
     
   c2-api:

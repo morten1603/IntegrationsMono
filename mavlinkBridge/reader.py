@@ -1,6 +1,8 @@
 import asyncio
 import os
+import nats
 
+from nats.aio.client import Client
 from mavsdk import System
 
 from adapters.common.models import TelemetryFrame, utc_now
@@ -16,7 +18,22 @@ async def print_position(drone: System):
         print("-" * 30)
 
 
-async def publish_telemetry(drone: System, adapter: RedisAdapter):
+# async def publish_telemetry(drone: System, adapter: RedisAdapter):
+#     position = await drone.telemetry.position()
+#     frame = TelemetryFrame(
+#         timestamp=utc_now(),
+#         latitude=float(position.latitude_deg),
+#         longitude=float(position.longitude_deg),
+#         altitude_m=float(position.absolute_altitude_m),
+#         battery_pct=0.0,
+#         mode="UNKNOWN",
+#         armed=False,
+#         source="mavlink",
+#         extra={"relative_altitude_m": getattr(position, "relative_altitude_m", 0.0)},
+#     )
+#     return adapter.publish_telemetry(frame)
+
+async def publish_telemetry(drone: System, nc: Client):
     position = await drone.telemetry.position()
     frame = TelemetryFrame(
         timestamp=utc_now(),
@@ -29,7 +46,7 @@ async def publish_telemetry(drone: System, adapter: RedisAdapter):
         source="mavlink",
         extra={"relative_altitude_m": getattr(position, "relative_altitude_m", 0.0)},
     )
-    return adapter.publish_telemetry(frame)
+    return nc.publish("telemetry", frame.json().encode())
 
 
 async def main():
@@ -42,6 +59,9 @@ async def main():
 
     print(f"Connected to Redis at {host}:{port}")
 
+    nc = await nats.connect("nats://localhost:4222")
+    print("Connected to NATS at nats://localhost:4222")
+
     drone = System()
     await drone.connect(system_address="udp://:14540")
 
@@ -52,7 +72,8 @@ async def main():
             break
 
     while True:
-        result = await publish_telemetry(drone, adapter)
+        #result = await publish_telemetry(drone, adapter)
+        result = await publish_telemetry(drone, nc)
         if not result.success:
             print(result.message)
         await asyncio.sleep(1)

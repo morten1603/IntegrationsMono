@@ -6,7 +6,7 @@ COPY pyproject.toml ./
 COPY adapters ./adapters
 COPY mavlinkBridge ./mavlinkBridge
 
-RUN pip install --no-cache-dir redis
+RUN pip install --no-cache-dir -e .
 
 ENV PYTHONPATH=/app
 
