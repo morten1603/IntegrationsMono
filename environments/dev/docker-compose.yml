@@ -4,6 +4,17 @@ services:
     ports:
       - "6379:6379"
 
+  nats:
+    image: nats:alpine  
+    ports:
+      - "4222:4222"
+    environment:
+      - NATS_SERVER_URL=nats://localhost:4222
+    depends_on:
+      - px4-simulation
+      - mavlink-bridge
+      - c2-api
+
   px4-simulation:
     image: px4io/px4-sitl:latest
     network_mode: "host"
