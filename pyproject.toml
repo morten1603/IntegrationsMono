@@ -26,12 +26,13 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["adapters*", "c2*", "simulation*"]
+include = ["adapters*", "c2*", "simulation*", "mavlinkBridge*"]
 exclude = ["environments*", "ingestion*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+asyncio_mode = "auto"
 
 [tool.ruff]
 line-length = 100

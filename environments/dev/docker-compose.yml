@@ -10,10 +10,6 @@ services:
       - "4222:4222"
     environment:
       - NATS_SERVER_URL=nats://localhost:4222
-    depends_on:
-      - px4-simulation
-      - mavlink-bridge
-      - c2-api
 
   px4-simulation:
     image: px4io/px4-sitl:latest
@@ -25,6 +21,11 @@ services:
       dockerfile: mavlinkBridge/Dockerfile   
     image: mavlink-bridge:local
     network_mode: "host"
+    depends_on:
+      - px4-simulation
+      - nats
+    environment:
+      - NATS_SERVER_URL=nats://localhost:4222
     
   c2-api:
     build:

@@ -10,4 +10,5 @@ RUN pip install --no-cache-dir -e .
 
 ENV PYTHONPATH=/app
 
-CMD ["python", "-m", "mavlinkBridge.reader"]
+ENV PYTHONUNBUFFERED=1
+CMD ["python", "-u", "-m", "mavlinkBridge.reader"]
