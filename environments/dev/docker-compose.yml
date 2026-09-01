@@ -2,13 +2,6 @@ networks:
   c2-net:
 
 services:
-  cots-hardware:
-    image: ghcr.io/morten1603/third-party/redis:7.2.4
-    ports:
-      - "6379:6379"
-    networks:
-      - c2-net
-
   nats:
     image: nats:alpine
     ports:
@@ -52,10 +45,7 @@ services:
       - "8000:8000"
     environment:
       - NATS_SERVER_URL=nats://nats:4222
-      - COTS_HOST=cots-hardware
-      - COTS_PORT=6379
     depends_on:
-      - cots-hardware
       - nats
     networks:
       - c2-net

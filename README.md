@@ -1,15 +1,18 @@
 # IntegrationsMono
 
-This project brings together a Redis-backed integration layer, a small simulation publisher, a C2 API, and a MAVLink bridge. The repository is organized around adapters, runtime services, and local development environments.
+This project connects **PX4 SITL** to a **C2 API** through a MAVLink bridge and NATS.
+
+```
+PX4 SITL  --MAVLink-->  mavlink-bridge  --NATS telemetry-->  c2-api  --HTTP-->  browser
+```
 
 ## Project layout
 
-- `adapters/` — adapters for shared integration logic and model/port abstractions
-- `c2/` — FastAPI command-and-control service
-- `simulation/` — simulation data publisher
-- `mavlinkBridge/` — MAVLink reader/bridge entrypoint
-- `environments/dev/` — Docker Compose files for local development
-- `ingestion/redis/` — Redis ingestion helper script
+- `adapters/` — shared models (`TelemetryFrame`) used by the MAVLink bridge
+- `c2/` — FastAPI command-and-control service and web UI
+- `mavlinkBridge/` — reads vehicle position over MAVLink and publishes JSON to NATS
+- `environments/dev/` — Docker Compose stack for local development
+- `ingestion/px4/` — helper to pull/push the PX4 SITL image
 
 ## Prerequisites
 
@@ -17,9 +20,15 @@ This project brings together a Redis-backed integration layer, a small simulatio
 - Python 3.12 (for local run/debug)
 - Optional: a Python virtual environment for local app execution
 
-## Quick start
+From the repo root, install deps once:
 
-### 1) Start the development stack
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+## Quick start
 
 From the repository root:
 
@@ -27,7 +36,7 @@ From the repository root:
 docker compose -f environments/dev/docker-compose.yml up --build
 ```
 
-This starts the Redis-backed services and the C2 API.
+This starts NATS, PX4 SITL, the MAVLink bridge, and the C2 API.
 
 Open the app in your browser:
 
@@ -41,13 +50,11 @@ Stop everything:
 docker compose -f environments/dev/docker-compose.yml down
 ```
 
-### 2) Start the simulation stack
+Rebuild a single service (example: the bridge):
 
 ```bash
-docker compose -f environments/dev/docker-compose-sim.yml up --build
+docker compose -f environments/dev/docker-compose.yml up -d --build --no-deps mavlink-bridge
 ```
-
-This stack includes the Redis service, the simulation publisher, and the C2 API.
 
 ---
 
@@ -59,12 +66,6 @@ This stack includes the Redis service, the simulation publisher, and the C2 API.
 docker build -f mavlinkBridge/Dockerfile -t mavlink-bridge:local .
 ```
 
-### Simulation publisher
-
-```bash
-docker build -f simulation/Dockerfile -t simulation-publisher:local .
-```
-
 ### C2 API
 
 ```bash
@@ -73,43 +74,47 @@ docker build -f c2/Dockerfile -t c2-api:local .
 
 ### Run the MAVLink bridge manually
 
+NATS and a MAVLink source must already be running on the host:
+
 ```bash
-docker run --rm -it mavlink-bridge:local
+docker run --rm -it --network host mavlink-bridge:local
 ```
 
 ---
 
 ## Local development without Docker Compose
 
-### Run the C2 API locally while Redis and the simulator stay in Docker
+### Run the C2 API locally while NATS stays in Docker
 
 ```bash
-docker compose -f environments/dev/docker-compose.yml up --build cots-hardware simulation-publisher
+docker compose -f environments/dev/docker-compose.yml up nats
 source .venv/bin/activate
-COTS_HOST=localhost COTS_PORT=6379 uvicorn c2.api.app:app --reload --app-dir .
+NATS_SERVER_URL=nats://localhost:4222 uvicorn c2.api.app:app --reload --app-dir .
 ```
 
 ### Run the MAVLink bridge locally
 
 ```bash
 source .venv/bin/activate
-PYTHONPATH=/app python -m mavlinkBridge.reader
+python -m mavlinkBridge.reader
 ```
+
+The bridge expects NATS at `nats://localhost:4222` and MAVLink at `udpin://0.0.0.0:14550` unless you override `NATS_SERVER_URL` and `MAVSDK_SYSTEM_ADDRESS`.
 
 ---
 
-## Redis ingestion helper
+## PX4 SITL image helper
 
 ```bash
-GITHUB_ORG=acme REDIS_VERSION=7.2.4 bash -lc 'source ingestion/redis/ingest.sh'
+GITHUB_ORG=acme PX4_VERSION=1.17.0 bash ingestion/px4/ingest.sh
 ```
 
-This is useful when you want to load or refresh Redis-backed data from a source image or repository.
+This pulls the upstream PX4 SITL image and pushes it to your GHCR third-party registry.
 
 ---
 
 ## Troubleshooting notes
 
 - If a service fails with an `exec format error`, verify the image architecture matches your host machine.
-- If you are debugging a local Python app, use the repo root as the working directory and make sure `PYTHONPATH` includes `/app`.
+- If you are debugging a local Python app, use the repo root as the working directory.
 - If Docker build caching causes confusion, rebuild with `--no-cache` or recreate the container with `docker compose up --force-recreate --build`.
