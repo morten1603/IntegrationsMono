@@ -6,7 +6,7 @@ COPY pyproject.toml ./
 COPY c2 ./c2
 COPY adapters ./adapters
 
-RUN pip install --no-cache-dir fastapi uvicorn redis
+RUN pip install --no-cache-dir fastapi -e .
 
 ENV PYTHONPATH=/app
 

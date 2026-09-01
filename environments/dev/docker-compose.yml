@@ -51,6 +51,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - NATS_SERVER_URL=nats://nats:4222
       - COTS_HOST=cots-hardware
       - COTS_PORT=6379
     depends_on:

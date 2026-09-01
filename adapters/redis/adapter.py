@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import Any
 
 import redis
-
 from adapters.common.models import Command, Result, TelemetryFrame, utc_now
 
 
