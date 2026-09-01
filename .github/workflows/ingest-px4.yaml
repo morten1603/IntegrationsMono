@@ -6,19 +6,27 @@ on:
     inputs:
       px4_version:
         required: true
-        default: '1.17.0'
+        default: 'v1.17.0'
 
 jobs:
   ingest-px4-sitl:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       packages: write
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Ingest PX4 SITL
         env:
           PX4_VERSION: ${{ inputs.px4_version }}
           GITHUB_ORG: ${{ github.repository_owner }}
-        run: bash ingestion/px4-sitl/ingest.sh
+        run: bash ingestion/px4/ingest.sh
