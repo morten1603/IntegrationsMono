@@ -38,26 +38,32 @@ async def publish_position(position: Position, nc: Client) -> None:
 
 async def main() -> None:
     nats_url = os.getenv("NATS_SERVER_URL", "nats://127.0.0.1:4222")
+    system_address = os.getenv("MAVSDK_SYSTEM_ADDRESS", "udpin://0.0.0.0:14550")
+
     nc = await nats.connect(nats_url)
     print(f"Connected to NATS at {nats_url}")
 
     drone = System()
-    print("Connecting to drone (MAVSDK)...")
-    await drone.connect(system_address="udpin://0.0.0.0:14540")
+    print(f"Connecting to drone (MAVSDK) at {system_address}...")
+    await drone.connect(system_address=system_address)
     print("Waiting for drone to connect...")
     async for state in drone.core.connection_state():
         if state.is_connected:
             print("Connected to drone!")
             break
 
-    async for position in drone.telemetry.position():
-        print(f"Latitude: {position.latitude_deg}")
-        print(f"Longitude: {position.longitude_deg}")
-        print(f"Absolute Altitude: {position.absolute_altitude_m} m")
-        print(f"Relative Altitude: {position.relative_altitude_m} m")
-        print("-" * 30)
-        await publish_position(position, nc)
-        break
+    try:
+        async for position in drone.telemetry.position():
+            # print(
+            #     f"lat={position.latitude_deg} lon={position.longitude_deg} "
+            #     f"alt={position.absolute_altitude_m}m"
+            # )
+            await publish_position(position, nc)
+    finally:
+        print("Disconnecting from drone...")
+        drone._stop_mavsdk_server()
+        print("Disconnecting from NATS...")
+        await nc.close()
 
 
 if __name__ == "__main__":

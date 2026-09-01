@@ -1,32 +1,48 @@
+networks:
+  c2-net:
+
 services:
   cots-hardware:
     image: ghcr.io/morten1603/third-party/redis:7.2.4
     ports:
       - "6379:6379"
+    networks:
+      - c2-net
 
   nats:
-    image: nats:alpine  
+    image: nats:alpine
     ports:
       - "4222:4222"
-    environment:
-      - NATS_SERVER_URL=nats://localhost:4222
+    networks:
+      - c2-net
 
+  # PX4 SITL — MAVLink is localhost-only inside this container.
+  # Onboard: local 14580 -> remote 14540
   px4-simulation:
     image: px4io/px4-sitl:latest
-    network_mode: "host"
- 
+    ports:
+      - "14550:14550/udp" # optional QGC on host
+    networks:
+      - c2-net
+
+  # Share PX4's network namespace so MAVSDK can hear localhost MAVLink.
+  # Rules when using network_mode: service:...
+  #   - do NOT set `networks:` or `ports:` on this service
+  #   - NATS is reached via DNS on px4's c2-net membership
   mavlink-bridge:
     build:
       context: ../..
-      dockerfile: mavlinkBridge/Dockerfile   
+      dockerfile: mavlinkBridge/Dockerfile
     image: mavlink-bridge:local
-    network_mode: "host"
+    network_mode: "service:px4-simulation"
+    environment:
+      - NATS_SERVER_URL=nats://nats:4222
+      # Listen for PX4 onboard stream aimed at remote port 14540
+      - MAVSDK_SYSTEM_ADDRESS=udpin://0.0.0.0:14550
     depends_on:
       - px4-simulation
       - nats
-    environment:
-      - NATS_SERVER_URL=nats://localhost:4222
-    
+
   c2-api:
     build:
       context: ../..
@@ -39,4 +55,6 @@ services:
       - COTS_PORT=6379
     depends_on:
       - cots-hardware
-      - px4-simulation
+      - nats
+    networks:
+      - c2-net
