@@ -106,7 +106,7 @@ The bridge expects NATS at `nats://localhost:4222` and MAVLink at `udpin://0.0.0
 ## PX4 SITL image helper
 
 ```bash
-GITHUB_ORG=acme PX4_VERSION=1.17.0 bash ingestion/px4/ingest.sh
+GITHUB_ORG=acme PX4_VERSION=latest bash ingestion/px4/ingest.sh
 ```
 
 This pulls the upstream PX4 SITL image and pushes it to your GHCR third-party registry.
